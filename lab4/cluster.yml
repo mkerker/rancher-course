@@ -1,0 +1,17 @@
+nodes:
+  - address: 10.0.0.10
+    user: vagrant
+    role:
+      - controlplane
+      - etcd
+      - worker
+    ssh_key_path: ../ssh/id_rsa
+services:
+  etcd:
+    backup_config:
+      interval_hours: 2
+      retention: 4
+kubernetes_version: v1.16.9-rancher1-1
+#kubernetes_version: v1.17.5-rancher1-1
+
+ssh_key_path: ../ssh/id_rsa

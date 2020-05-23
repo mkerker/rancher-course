@@ -1,0 +1,93 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+conf = YAML.load_file('vagrantconfig.yml')
+puts "Config: #{conf.inspect}\n\n"
+docker_version = conf.fetch('docker_version')
+
+Vagrant.configure("2") do |config|
+  config.vm.box = conf.fetch('vm_box')
+  config.vm.provider :virtualbox do |v|
+    v.linked_clone = true
+  end
+
+  config.vm.define :master do |master|
+    master.vm.hostname = "master"
+    master.vm.guest = :ubuntu
+    master.vm.network conf.fetch('network').fetch('network_type'), ip: conf.fetch('ip').fetch('master')
+    master.vm.provider :virtualbox do |v|
+      v.cpus = conf.fetch('master').fetch('cpus')
+      v.memory = conf.fetch('master').fetch('memory')
+      v.name = "master"
+    end
+    master.vm.network :private_network, ip: conf.fetch('ip').fetch('master')
+    if File.file?(conf.fetch('keys').fetch('private_key'))
+      master.vm.provision "file", source: conf.fetch('keys').fetch('private_key'), destination: "/home/vagrant/.ssh/id_rsa"
+    end
+    if File.file?(conf.fetch('keys').fetch('public_key'))
+      master.vm.provision "file", source: conf.fetch('keys').fetch('public_key'), destination: "/home/vagrant/.ssh/id_rsa.pub"
+      public_key = File.read(conf.fetch('keys').fetch('public_key'))
+      master.vm.provision :shell, :inline =>"
+        echo '#{public_key}' >> /home/vagrant/.ssh/authorized_keys
+        chmod -R 600 /home/vagrant/.ssh/authorized_keys
+     ", privileged: false
+    end
+    master.vm.provision :shell, privileged: false, inline: $install_common_tools
+    master.vm.provision :shell, privileged: false, path: "https://releases.rancher.com/install-docker/19.03.sh"
+    master.vm.provision :shell, privileged: false, inline: $setup_docker
+  end
+end
+
+$install_common_tools = <<-SCRIPT
+#!/bin/bash
+set -e
+# remove apparmor
+sudo systemctl stop apparmor
+sudo systemctl disable apparmor
+sudo apt-get remove -y apparmor
+
+# disable swap
+sudo swapoff -a
+sudo sed -i '/swap/d' /etc/fstab
+
+if grep -q "^#AllowTcpForwarding" /etc/ssh/sshd_config
+then
+  sudo sed -i 's/^#AllowAgentForwarding/AllowAgentForwarding/' /etc/ssh/sshd_config
+  sudo sed -i 's/^#AllowTcpForwarding/AllowTcpForwarding/' /etc/ssh/sshd_config
+  sudo sed -i 's/^#GatewayPorts no/GatewayPorts yes/' /etc/ssh/sshd_config
+  sudo systemctl restart sshd
+fi
+SCRIPT
+
+$setup_docker = <<-SCRIPT
+#!/bin/bash
+set -e
+if grep -q docker /etc/group
+then
+  echo "the docker group already exists"
+else
+  echo "create the docker group"
+  sudo groupadd docker
+fi
+
+if getent group docker | grep -q "\b${USER}\b"
+then
+  echo "user $USER already exists in the docker group"
+else
+  echo "add $USER to the docker group"
+  sudo usermod -aG docker $USER
+  newgrp docker
+fi
+
+docker version
+SCRIPT
+
+
+$setup_server = <<-SCRIPT
+#!/bin/bash
+set -e
+if [ ! -f /usr/local/bin/rke ]; then
+  curl -o /usr/local/bin/rke -L https://github.com/rancher/rke/releases/download/v1.1.1/rke_linux-amd64
+  chmod +x /usr/local/bin/rke
+fi
+SCRIPT
