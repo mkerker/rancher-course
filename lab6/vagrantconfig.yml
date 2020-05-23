@@ -1,0 +1,13 @@
+vm_box: "ubuntu/bionic64"
+docker_version: 18.09.9
+node:
+  count: 1
+  cpus: 2
+  memory: 2048
+ip:
+  node_range: 10.1.0.10
+keys:
+  public_key: "../ssh/id_rsa.pub"
+  private_key: "../ssh/id_rsa"
+network:
+  network_type: private_network
