@@ -1,3 +1,6 @@
 ssh/*
 **/.vagrant
 **.DS_Store
+**kube_config_cluster.yml
+**cluster.rkestate
+*.log
