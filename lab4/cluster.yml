@@ -5,7 +5,6 @@ nodes:
       - controlplane
       - etcd
       - worker
-    ssh_key_path: ../ssh/id_rsa
 services:
   etcd:
     backup_config:
