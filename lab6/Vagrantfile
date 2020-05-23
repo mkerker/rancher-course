@@ -97,6 +97,6 @@ SCRIPT
 $run_rancher = <<-SCRIPT
 if [[ $(docker ps | grep rancher |wc -l) -eq 0 ]]
 then
-  docker run -d --restart=unless-stopped -p 80:80 -p 443:443 -v /opt/rancher rancher/rancher:v2.4.3
+  docker run -d --restart=unless-stopped --name=rancher -p 80:80 -p 443:443 -v /opt/rancher rancher/rancher:v2.4.3
 fi
 SCRIPT
