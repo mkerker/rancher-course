@@ -1,16 +1,11 @@
 vm_box: "ubuntu/bionic64"
 docker_version: 18.09.9
-master:
-  count: 3
-  cpus: 2
-  memory: 2048
-worker:
-  count: 2
+node:
+  count: 1
   cpus: 2
   memory: 2048
 ip:
-  master_range: 10.0.0.10
-  worker_range: 10.0.0.100
+  node_range: 10.1.0.10
 keys:
   public_key: "../ssh/id_rsa.pub"
   private_key: "../ssh/id_rsa"

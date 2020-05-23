@@ -1,4 +1,4 @@
-ssh/*
+ssh/id_*
 **/.vagrant
 **.DS_Store
 **kube_config_cluster.yml
